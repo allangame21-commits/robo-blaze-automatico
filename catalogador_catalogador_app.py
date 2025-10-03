@@ -74,17 +74,17 @@ def build_features(numeros, window=8):
 
 def train_models(X, y):
     if X.shape[0] < 10 or len(set(y))<2: return None, None
-    rf = RandomForestClassifier(n_estimators=200, max_depth=12, random_state=42)
+    rf = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
     rf.fit(X, y)
-    xgb = XGBClassifier(n_estimators=200, max_depth=6, learning_rate=0.1,
-                       use_label_encoder=False, eval_metric="mlogloss", random_state=42)
+    xgb = XGBClassifier(n_estimators=100, max_depth=6, learning_rate=0.1,
+                       eval_metric="mlogloss", random_state=42)
     xgb.fit(X, y)
     return rf, xgb
 
 def get_probas(model, X_row):
     if model is None: return np.array([0.0,0.0,0.0])
     try:
-        p = model.predict_proba(X_row)[0]
+        p = model.predict_proba(X_row.values.reshape(1, -1))[0]
         probs = np.zeros(3)
         for idx, cls in enumerate(model.classes_): probs[int(cls)] = float(p[idx])
         return probs
@@ -135,11 +135,11 @@ def compute_model_weights(numeros, window=8, n_splits=4, min_train=30):
 def buscar_dados_blaze():
     """Busca os dados mais recentes da API da Blaze - CORRIGIDA"""
     try:
-        url = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
+        url = "https://blaze.com/api/roulette_games/recent"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'application/json',
-            'Referer': 'https://blaze.bet.br/'
+            'Referer': 'https://blaze.com/'
         }
         
         response = requests.get(url, headers=headers, timeout=10)
@@ -147,12 +147,8 @@ def buscar_dados_blaze():
         if response.status_code == 200:
             dados = response.json()
             
-            # DEBUG: Mostrar o que a API retornou
-            st.sidebar.write(f"📡 API retornou {len(dados)} registros")
-            
             resultados = []
             for jogo in dados:
-                # CORREÇÃO: Usando as chaves corretas da API
                 resultados.append({
                     'numero': jogo['roll'],
                     'cor': jogo['color'],  # 0=branco, 1=vermelho, 2=preto
@@ -160,7 +156,6 @@ def buscar_dados_blaze():
                     'id': jogo['id']
                 })
             
-            st.sidebar.success(f"✅ Dados processados: {len(resultados)} jogos")
             return resultados
         else:
             st.sidebar.error(f"❌ Erro HTTP: {response.status_code}")
@@ -388,7 +383,7 @@ intervalo = st.sidebar.selectbox("Intervalo de Verificação (segundos)", [5, 10
 # ----------------------
 
 def atualizar_dados_automaticamente():
-    """Função principal de atualização automática - CORRIGIDA"""
+    """Função principal de atualização automática - CORRIGIDO"""
     try:
         # Buscar dados da Blaze
         dados_blaze = buscar_dados_blaze()
@@ -398,9 +393,6 @@ def atualizar_dados_automaticamente():
         
         # Extrair números (do mais antigo para o mais recente)
         novos_numeros = [jogo['roll'] for jogo in reversed(dados_blaze)]
-        
-        # DEBUG: Mostrar quantos números foram obtidos
-        st.sidebar.write(f"🎯 Números obtidos: {len(novos_numeros)}")
         
         # Atualizar dados
         st.session_state.numeros_auto = novos_numeros
@@ -515,10 +507,9 @@ if 'dados_blaze' in st.session_state and st.session_state.dados_blaze:
     ultimos_resultados = st.session_state.dados_blaze[:10]
     
     for jogo in ultimos_resultados:
-        # CORREÇÃO: Usando as chaves corretas da API
         cor_emoji = cor_para_emoji(jogo['color'])
-        hora = jogo['created_at'][11:19] if 'created_at' in jogo else "N/A"
-        st.write(f"{cor_emoji} **Número {jogo['roll']}** - {hora}")
+        hora = jogo['data'][11:19] if 'data' in jogo else "N/A"
+        st.write(f"{cor_emoji} **Número {jogo['numero']}** - {hora}")
 
 # ----------------------
 # 🎯 PRÓXIMA PREVISÃO
