@@ -135,7 +135,7 @@ def compute_model_weights(numeros, window=8, n_splits=4, min_train=30):
 def buscar_dados_blaze():
     """Busca os dados mais recentes da API da Blaze - CORRIGIDA"""
     try:
-        url = "https://blaze.com/api/roulette_games/recent"
+        url = "https://blaze.bet.br/api/singleplayer-originals/originals/roulette_games/recent/1"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Accept': 'application/json',
